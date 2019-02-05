@@ -11,7 +11,6 @@
         <ion-card-header>
           <ion-img :src="require('./../assets/logoLol1.jpeg')"></ion-img>
         </ion-card-header>
-
         <hr>
         <ion-card-content>
           <ion-grid>
@@ -23,6 +22,7 @@
               <ion-label position="stacked">Region</ion-label>
               <ion-input value="EUW1" readonly></ion-input>
             </div>
+            <span v-if="check" class="warning">This summoner name doesn't exist!</span>
             <ion-row justify-content-center>
               <ion-button
                 color="primary"
@@ -39,13 +39,15 @@
 
 <script>
 /* eslint-disable */
-
+import axios from "axios";
+import constant from "./../constant.js";
 export default {
   name: "Login",
   props: {},
   data: function() {
     return {
-      summonerName: ""
+      summonerName: "",
+      check: false
     };
   },
   methods: {
@@ -53,10 +55,25 @@ export default {
       this.summonerName = $event.target.value;
     },
     startInvade() {
-      this.$router.push({
-        name: "summonerView",
-        params: { summonerName: this.summonerName }
-      });
+      var self = this;
+      this.checkSummonerName()
+        .then(function(result) {
+          self.$router.push({
+            name: "summonerView",
+            params: { summonerName: self.summonerName }
+          });
+        })
+        .catch(function(error) {
+          self.check = true;
+        });
+    },
+    async checkSummonerName() {
+      let json = await axios.get(
+        "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" +
+          this.summonerName,
+        { params: { api_key: constant.API_KEY } }
+      );
+      return json;
     }
   }
 };
@@ -64,19 +81,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
+.warning {
+  color: red;
 }
 hr {
   border: 1px solid white !important;
@@ -84,16 +90,16 @@ hr {
   width: 90% !important;
   display: block !important;
 }
-.item{
+.item {
   background-color: rgba(255, 255, 255, 0.2);
 }
-.item > ion-label{
+.item > ion-label {
   color: #3880ff;
 }
- .item > ion-input{
+.item > ion-input {
   color: white;
 }
-ion-button{
+ion-button {
   margin-top: 14px;
 }
 .contentWallpaper {

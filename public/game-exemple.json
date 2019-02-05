@@ -1,0 +1,227 @@
+{
+  "gameId": 3919433727,
+  "gameStartTime": 0,
+  "platformId": "EUW1",
+  "gameMode": "CLASSIC",
+  "mapId": 11,
+  "gameType": "MATCHED_GAME",
+  "gameQueueConfigId": 420,
+  "observers": {
+    "encryptionKey": "oB9DY2SulmhT1t+rMSdITFmVXtAzWjDq"
+  },
+  "participants": [
+    {
+      "profileIconId": 28,
+      "championId": 84,
+      "summonerName": "Holonbend",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8000,
+        "perkIds": [8021, 9111, 9104, 8014, 8139, 8135, 5008, 5008, 5002],
+        "perkSubStyle": 8100
+      },
+      "spell2Id": 12,
+      "teamId": 100,
+      "spell1Id": 4,
+      "summonerId": "JmVACW2G5_lE21kDPHsNBYJoKLsmHDosqmWXqU0FljYAypzO"
+    },
+    {
+      "profileIconId": 0,
+      "championId": 29,
+      "summonerName": "MoonlightSonate",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8000,
+        "perkIds": [8005, 9111, 9104, 8014, 8233, 8236, 5005, 5008, 5002],
+        "perkSubStyle": 8200
+      },
+      "spell2Id": 4,
+      "teamId": 100,
+      "spell1Id": 7,
+      "summonerId": "uEnbhktPsVDlSCRXKpzLn43eZJcK7VjscTQfnvvbB0lnqnM"
+    },
+    {
+      "profileIconId": 786,
+      "championId": 201,
+      "summonerName": "Kaatom",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8400,
+        "perkIds": [8465, 8446, 8473, 8453, 8345, 8352, 5008, 5008, 5001],
+        "perkSubStyle": 8300
+      },
+      "spell2Id": 14,
+      "teamId": 100,
+      "spell1Id": 4,
+      "summonerId": "TWUhIZGlZiu2zfgxFgk1zeZTF1gWrtb_2-KcVPxwbF0-5LE"
+    },
+    {
+      "profileIconId": 3851,
+      "championId": 99,
+      "summonerName": "RaR Khoel",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8200,
+        "perkIds": [8229, 8226, 8210, 8236, 8313, 8347, 5008, 5008, 5002],
+        "perkSubStyle": 8300
+      },
+      "spell2Id": 14,
+      "teamId": 100,
+      "spell1Id": 4,
+      "summonerId": "TGt873_-sXprQCFAIDnBZT9gixofEZEAvztN-LG4j93PPiM"
+    },
+    {
+      "profileIconId": 3852,
+      "championId": 164,
+      "summonerName": "ykraX",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8000,
+        "perkIds": [8005, 9111, 9104, 8014, 8233, 8232, 5005, 5008, 5002],
+        "perkSubStyle": 8200
+      },
+      "spell2Id": 4,
+      "teamId": 100,
+      "spell1Id": 11,
+      "summonerId": "bzjtq9XTYxvXbqJ5JRE7k1VrPpzMK_U3z7Uc_aP3_broXVw"
+    },
+    {
+      "profileIconId": 28,
+      "championId": 236,
+      "summonerName": "Scipion I",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8000,
+        "perkIds": [8005, 9101, 9103, 8014, 8226, 8233, 5005, 5008, 5002],
+        "perkSubStyle": 8200
+      },
+      "spell2Id": 7,
+      "teamId": 200,
+      "spell1Id": 4,
+      "summonerId": "yS7hft7sDEYlO4qFr2J4NI7mlCLFHksnHVM4B9leZFs6lD8"
+    },
+    {
+      "profileIconId": 3821,
+      "championId": 107,
+      "summonerName": "Blue Devil Smile",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8000,
+        "perkIds": [8021, 9111, 9104, 8014, 8143, 8135, 5005, 5008, 5002],
+        "perkSubStyle": 8100
+      },
+      "spell2Id": 11,
+      "teamId": 200,
+      "spell1Id": 4,
+      "summonerId": "FJueTExxhjQMINS4wXTi0_el4GtkTuzBurR5l7mLlfhYyqI"
+    },
+    {
+      "profileIconId": 898,
+      "championId": 83,
+      "summonerName": "Terminator991",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8000,
+        "perkIds": [8010, 9111, 9105, 8299, 8446, 8473, 5008, 5008, 5002],
+        "perkSubStyle": 8400
+      },
+      "spell2Id": 12,
+      "teamId": 200,
+      "spell1Id": 4,
+      "summonerId": "YAEh_1zRpQuo6I_Q8lc0-HOKLeBbRzqqsxvEQhpR_1eACwQ"
+    },
+    {
+      "profileIconId": 22,
+      "championId": 12,
+      "summonerName": "Unbanned Inter",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8400,
+        "perkIds": [8439, 8446, 8473, 8242, 8316, 8347, 5005, 5008, 5001],
+        "perkSubStyle": 8300
+      },
+      "spell2Id": 4,
+      "teamId": 200,
+      "spell1Id": 14,
+      "summonerId": "yO1hmPp9Hh4gYi-hjUodaCsNdoJzkWh57QWUMZT7-Le5PkQ"
+    },
+    {
+      "profileIconId": 3859,
+      "championId": 69,
+      "summonerName": "gabdez",
+      "gameCustomizationObjects": [],
+      "bot": false,
+      "perks": {
+        "perkStyle": 8200,
+        "perkIds": [8230, 8226, 8210, 8236, 8135, 8139, 5008, 5008, 5001],
+        "perkSubStyle": 8100
+      },
+      "spell2Id": 12,
+      "teamId": 200,
+      "spell1Id": 4,
+      "summonerId": "CZOat495FA0y8NTzHarUXKpstuutCO4nV6G1lF-OZJPy0MA"
+    }
+  ],
+  "gameLength": 0,
+  "bannedChampions": [
+    {
+      "teamId": 100,
+      "championId": 412,
+      "pickTurn": 1
+    },
+    {
+      "teamId": 100,
+      "championId": 24,
+      "pickTurn": 2
+    },
+    {
+      "teamId": 100,
+      "championId": 122,
+      "pickTurn": 3
+    },
+    {
+      "teamId": 100,
+      "championId": 121,
+      "pickTurn": 4
+    },
+    {
+      "teamId": 100,
+      "championId": 157,
+      "pickTurn": 5
+    },
+    {
+      "teamId": 200,
+      "championId": 75,
+      "pickTurn": 6
+    },
+    {
+      "teamId": 200,
+      "championId": 25,
+      "pickTurn": 7
+    },
+    {
+      "teamId": 200,
+      "championId": 202,
+      "pickTurn": 8
+    },
+    {
+      "teamId": 200,
+      "championId": 67,
+      "pickTurn": 9
+    },
+    {
+      "teamId": 200,
+      "championId": 555,
+      "pickTurn": 10
+    }
+  ]
+}

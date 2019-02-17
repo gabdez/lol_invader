@@ -1,11 +1,5 @@
 <template>
   <ion-app>
-    <!-- 
-    <ion-header>
-      <ion-toolbar color="primary">
-        <ion-title text-center>Lol Invader</ion-title>
-      </ion-toolbar>
-    </ion-header>-->
     <ion-content padding class="contentWallpaper">
       <ion-card>
         <ion-card-header>
@@ -30,6 +24,9 @@
                 :disabled="summonerName == ''"
               >Start invade</ion-button>
             </ion-row>
+            <!-- <ion-row justify-content-center>
+              <ion-button color="primary" @click="goToAllChamps">see all champs</ion-button>
+            </ion-row>-->
           </ion-grid>
         </ion-card-content>
       </ion-card>
@@ -56,24 +53,31 @@ export default {
     },
     startInvade() {
       var self = this;
+      console.log();
       this.checkSummonerName()
         .then(function(result) {
+          console.log("result login :");
+          console.log(result);
           self.$router.push({
             name: "summonerView",
-            params: { summonerName: self.summonerName }
+            params: { summonerId: result.data.id }
           });
         })
         .catch(function(error) {
+          console.log(error);
           self.check = true;
         });
     },
     async checkSummonerName() {
       let json = await axios.get(
-        "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" +
+        "https://lolinvader.herokuapp.com/lol/summoner/v4/summoners/by-name/" +
           this.summonerName,
         { params: { api_key: constant.API_KEY } }
       );
       return json;
+    },
+    goToAllChamps() {
+      this.$router.push({ name: "allChampsView" });
     }
   }
 };

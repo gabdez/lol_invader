@@ -14,9 +14,13 @@
         </ion-toolbar>
       </ion-header>
       <ion-content padding class="contentWallpaper">
-        <PlayerInfo v-if="summonerData" :data="summonerData"/>
+        <span v-if="summonerData">
+          <PlayerInfo :data="summonerData"/>
+          <ion-row justify-content-center>
+            <ion-button @click="searchActiveGame">Search active game</ion-button>
+          </ion-row>
+        </span>
         <NotFound
-          @returnLogin="returnLogin"
           v-else-if="endRequest==true && summonerData == null"
         >this summoner have no Rank for the moment</NotFound>
         <Loading v-else></Loading>
@@ -62,10 +66,7 @@ export default {
       axios
         .get(
           "https://lolinvader.herokuapp.com/lol/league/v4/positions/by-summoner/" +
-            this.summonerId,
-          {
-            params: { api_key: constant.API_KEY }
-          }
+            this.summonerId
         )
         .then(response => {
           console.log("requete succés fin.");
@@ -80,21 +81,24 @@ export default {
     },
     returnLogin() {
       this.$router.push("/");
+    },
+    searchActiveGame() {
+      this.$router.push({
+        name: "gameView",
+        params: { summonerId: this.summonerId }
+      });
     }
   }
 };
 </script>
 
 <style>
-.contentWallpaper {
-  --background: url("./../assets/wall2.jpg") no-repeat 100% 100% !important;
-}
 .warning {
   color: red;
 }
 ion-card {
   background-color: rgba(255, 255, 255, 0.3) !important;
-  margin-top: 20% !important;
+  margin-top: 10% !important;
 }
 ion-toolbar {
   position: absolute;

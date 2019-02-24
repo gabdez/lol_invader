@@ -1,7 +1,8 @@
 const MY_SUMMONER_ID = "CZOat495FA0y8NTzHarUXKpstuutCO4nV6G1lF-OZJPy0MA";
 const MY_SUMMONER_NAME = "gabdez";
-const API_KEY = "RGAPI-32ceb2d7-44d2-4129-bc50-07daed1d7c8a";
+const API_KEY = "RGAPI-f0b2ac1e-b626-4ff5-8231-6cde66e58e92";
 const ACCOUNT_ID = "eflt0vXyJEkN5IUKAfTi51VGhbmsseojvR-O251Ct9Uvxbk";
+//mdp : Lbjcavs00&
 
 export default {
   MY_SUMMONER_ID: MY_SUMMONER_ID,

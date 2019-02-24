@@ -4,8 +4,8 @@
       <h1>
         <slot></slot>
       </h1>
-      <ion-button @click="$router.push('/')">
-        <ion-icon slot="start" name="arrow-back"></ion-icon>back Login
+      <ion-button @click="$router.go(-1)">
+        <ion-icon slot="start" name="arrow-back"></ion-icon>back
       </ion-button>
     </ion-content>
   </ion-app>
@@ -20,9 +20,4 @@ export default {
 };
 </script>
 
-<style>
-.contentWallpaper {
-  --background: url("./../assets/wall2.jpg") no-repeat 100% 100% !important;
-}
-</style>
 

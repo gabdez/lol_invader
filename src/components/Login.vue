@@ -57,7 +57,7 @@ export default {
       this.checkSummonerName()
         .then(function(result) {
           console.log("result login :");
-          console.log(result);
+          console.log(result.data);
           self.$router.push({
             name: "summonerView",
             params: { summonerId: result.data.id }
@@ -71,8 +71,7 @@ export default {
     async checkSummonerName() {
       let json = await axios.get(
         "https://lolinvader.herokuapp.com/lol/summoner/v4/summoners/by-name/" +
-          this.summonerName,
-        { params: { api_key: constant.API_KEY } }
+          this.summonerName
       );
       return json;
     },
@@ -105,8 +104,5 @@ hr {
 }
 ion-button {
   margin-top: 14px;
-}
-.contentWallpaper {
-  --background: url("./../assets/wall2.jpg") no-repeat 100% 100% !important;
 }
 </style>

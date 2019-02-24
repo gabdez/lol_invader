@@ -1,7 +1,7 @@
 <template>
   <ion-app>
     <transition name="fade">
-      <keep-alive :include="['home','summonerView']">
+      <keep-alive :include="['home','summonerView','gameView']">
         <router-view :key="$route.fullPath"></router-view>
       </keep-alive>
     </transition>

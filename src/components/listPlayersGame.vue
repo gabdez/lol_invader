@@ -1,102 +1,88 @@
 <template>
-  <ion-app>
-    <ion-content>
-      <ion-button
-        style="display: inline-block"
-        class="outlineBtn"
-        color="red"
-        @click="$router.go(-1)"
-      >
-        <ion-icon slot="start" name="arrow-back"></ion-icon>back
-      </ion-button>
-      <ion-list lines="none">
-        <ion-item-group>
-          <ion-item-divider style="height:20px">
-            <ion-label>ally team</ion-label>
-          </ion-item-divider>
-          <ion-item
-            v-for="p in dataGame.participants.filter(participant => participant.teamId === mySummoner.teamId)"
-            :key="p.summonerName"
-            style="border-bottom: solid 1px grey;"
-            class="ally"
-            @click="detailsPlayer(p)"
-          >
-            <ion-thumbnail>
-              <img v-if="tabUrl.length >0" :src="getChampUrl(p.championId)">
-            </ion-thumbnail>
-            <ion-avatar>
-              <img :src="require('./../assets/sumSpells/'+ p.spell1Id +'.png')">
-            </ion-avatar>
-            <ion-avatar>
-              <img :src="require('./../assets/sumSpells/'+ p.spell2Id +'.png')">
-            </ion-avatar>
-            <ion-img
-              v-if="arrayRankSum.length >0"
-              :src="require('./../assets/emblems/Emblem_'+getSumData(p.summonerId).tier+'.png')"
-              style="height: 40px;width:40px;"
-            ></ion-img>
-            <span
-              v-if="arrayRankSum.length >0"
-              style="padding-right:5px;"
-            >{{getSumData(p.summonerId).rank}}</span>
-            <ion-label
-              style="color:white;"
-              :class="{'summoner': p.summonerName == mySummoner.summonerName}"
-            >{{p.summonerName}}</ion-label>
-            <!-- <ion-note>other things here</ion-note> -->
-            <ion-option-button class="optionBtn">details ></ion-option-button>
-          </ion-item>
-        </ion-item-group>
-        <ion-item-group>
-          <ion-item-divider>
-            <ion-label>enemy team</ion-label>
-          </ion-item-divider>
-          <ion-item
-            align-items-center
-            v-for="p in dataGame.participants.filter(part => part.teamId != mySummoner.teamId)"
-            :key="p.summonerName"
-            style="border-bottom: solid 1px grey"
-            class="enemy"
-            @click="detailsPlayer(p)"
-          >
-            <ion-thumbnail>
-              <img v-if="tabUrl.length >0" :src="getChampUrl(p.championId)">
-            </ion-thumbnail>
-            <ion-avatar>
-              <img :src="require('./../assets/sumSpells/'+ p.spell1Id +'.png')">
-            </ion-avatar>
-            <ion-avatar>
-              <img :src="require('./../assets/sumSpells/'+ p.spell2Id +'.png')">
-            </ion-avatar>
-            <ion-img
-              v-if="arrayRankSum.length >0"
-              :src="require('./../assets/emblems/Emblem_'+getSumData(p.summonerId).tier+'.png')"
-              style="height: 40px;width:40px;"
-            ></ion-img>
-            <span
-              v-if="arrayRankSum.length >0"
-              style="padding-right:5px;"
-            >{{getSumData(p.summonerId).rank}}</span>
-            <ion-label
-              style="color:white;"
-              :class="{'summoner': p.summonerName == 'gabdez'}"
-            >{{p.summonerName}}</ion-label>
+  <div class="listPlayersGame">
+    <ion-list lines="none">
+      <ion-item-group v-if="dataGame.participants">
+        <ion-item-divider style="height:20px; background-color: transparent">
+          <ion-label>ally team</ion-label>
+        </ion-item-divider>
+        <ion-item
+          v-for="p in dataGame.participants.filter(participant => participant.teamId === mySummoner.teamId)"
+          :key="p.summonerName"
+          style="border-bottom: solid 1px grey;"
+          class="ally"
+          @click="detailsPlayer(p)"
+        >
+          <ion-thumbnail>
+            <img v-if="tabUrl.length >0" :src="getChampUrl(p.championId).url">
+          </ion-thumbnail>
+          <ion-avatar>
+            <img :src="require('./../assets/sumSpells/'+ p.spell1Id +'.png')">
+          </ion-avatar>
+          <ion-avatar>
+            <img :src="require('./../assets/sumSpells/'+ p.spell2Id +'.png')">
+          </ion-avatar>
+          <ion-img
+            v-if="haveRank(p.summonerId)"
+            :src="require('./../assets/emblems/Emblem_'+getSumData(p.summonerId).tier+'.png')"
+            style="height: 40px;width:40px;"
+          ></ion-img>
+          <span
+            v-if="haveRank(p.summonerId)"
+            style="padding-right:5px;"
+          >{{getSumData(p.summonerId).rank}}</span>
+          <ion-label
+            style="color:white;"
+            :class="{'summoner': p.summonerName == mySummoner.summonerName}"
+          >{{p.summonerName}}</ion-label>
+          <!-- <ion-note>other things here</ion-note> -->
+          <ion-icon name="arrow-forward" mode="ios" style="color:white; font-size:1em"></ion-icon>
+        </ion-item>
+      </ion-item-group>
+      <ion-item-group v-if="dataGame.participants">
+        <ion-item-divider>
+          <ion-label>enemy team</ion-label>
+        </ion-item-divider>
+        <ion-item
+          align-items-center
+          v-for="p in dataGame.participants.filter(part => part.teamId != mySummoner.teamId)"
+          :key="p.summonerName"
+          style="border-bottom: solid 1px grey"
+          class="enemy"
+          @click="detailsPlayer(p)"
+        >
+          <ion-thumbnail>
+            <img v-if="tabUrl.length >0" :src="getChampUrl(p.championId).url">
+          </ion-thumbnail>
+          <ion-avatar>
+            <img :src="require('./../assets/sumSpells/'+ p.spell1Id +'.png')">
+          </ion-avatar>
+          <ion-avatar>
+            <img :src="require('./../assets/sumSpells/'+ p.spell2Id +'.png')">
+          </ion-avatar>
+          <ion-img
+            v-if="haveRank(p.summonerId)"
+            :src="require('./../assets/emblems/Emblem_'+getSumData(p.summonerId).tier+'.png')"
+            style="height: 40px;width:40px;"
+          ></ion-img>
+          <span
+            v-if="haveRank(p.summonerId)"
+            style="padding-right:5px;"
+          >{{getSumData(p.summonerId).rank}}</span>
+          <ion-label
+            style="color:white;"
+            :class="{'summoner': p.summonerName == 'gabdez'}"
+          >{{p.summonerName}}</ion-label>
 
-            <ion-option-button class="optionBtn">details ></ion-option-button>
-          </ion-item>
-        </ion-item-group>
-      </ion-list>
-    </ion-content>
-  </ion-app>
+          <ion-icon name="arrow-forward" mode="ios" style="color:white; font-size:1em"></ion-icon>
+        </ion-item>
+      </ion-item-group>
+    </ion-list>
+  </div>
 </template>
 
 <style scoped>
-.optionBtn {
-  background-color: transparent;
-  color: white;
-  padding: 0px 0px;
-  font-size: 12px;
-  cursor: pointer;
+.listPlayersGame {
+  padding-top: 35px;
 }
 /* ion-label {
   padding-top: 5% !important;
@@ -143,7 +129,9 @@ export default {
       arrayRankSum: []
     };
   },
-  mounted: function() {
+  created() {
+    console.log("created");
+    this.summonerId = this.$route.params.summonerId;
     let self = this;
     axios
       .get(
@@ -157,6 +145,9 @@ export default {
       .catch(error => {
         console.log(error);
       });
+  },
+  mounted: function() {
+    console.log("mounted");
   },
   methods: {
     getAllChampsUrl() {
@@ -172,6 +163,7 @@ export default {
           if (i != -1) {
             tabUrl.push({
               championId: champ[1].key,
+              championKey: champ[1].id,
               url:
                 "http://ddragon.leagueoflegends.com/cdn/9.3.1/img/champion/" +
                 champ[1].id +
@@ -185,7 +177,7 @@ export default {
     },
     getChampUrl(championId) {
       if (this.tabUrl != null)
-        return this.tabUrl.filter(obj => obj.championId == championId)[0].url;
+        return this.tabUrl.filter(obj => obj.championId == championId)[0];
     },
     async getAllSumRank() {
       var arrayPromises = [];
@@ -194,17 +186,15 @@ export default {
       this.dataGame.participants.forEach(p => {
         let promise = axios.get(
           "https://lolinvader.herokuapp.com/lol/league/v4/positions/by-summoner/" +
-            p.summonerId,
-          {
-            params: { api_key: constant.API_KEY }
-          }
+            p.summonerId
         );
         arrayPromises.push(promise);
       });
       var self = this;
+      console.log(arrayPromises);
       Promise.all(arrayPromises).then(function(values) {
         values.forEach(p => {
-          self.arrayRankSum.push(p.data[0]);
+          if (p.data[0]) self.arrayRankSum.push(p.data[0]);
         });
       });
     },
@@ -212,14 +202,30 @@ export default {
       if (this.arrayRankSum != null)
         return this.arrayRankSum.filter(obj => obj.summonerId == summonerId)[0];
     },
+    haveRank(summonerId) {
+      console.log();
+      if (this.arrayRankSum != null)
+        return this.arrayRankSum.filter(
+          obj => obj.summonerId == summonerId
+        )[0] != undefined
+          ? true
+          : false;
+    },
     detailsPlayer(p) {
-      console.log(p);
+      var obj = [];
+      obj.push(p);
+      obj.push(this.getChampUrl(p.championId));
+      this.$store.commit("updatePlayerProfile", obj);
+      console.log(this.$store.state.playerProfile);
+      this.$router.push({
+        name: "playerProfileView"
+      });
     }
   },
   computed: {
     mySummoner() {
       return this.dataGame.participants.filter(
-        d => d.summonerId == this.$route.params.summonerId
+        d => d.summonerId == this.summonerId
       )[0];
     }
   }

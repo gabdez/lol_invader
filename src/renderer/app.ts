@@ -1,4 +1,5 @@
 import { formatTime } from '../shared/analysis/util';
+import { buildClaudeAiPrompt } from '../shared/aiPrompt';
 import { assignRoleWithSwap } from '../shared/roles';
 import { currentPhase, upcomingObjectives } from '../shared/live';
 import {
@@ -40,6 +41,8 @@ interface LolApi {
   analyzeManual(ctx: GameContext): Promise<GameAnalysis>;
   runAi(ctx: GameContext): Promise<number>;
   cancelAi(): Promise<void>;
+  copyText(text: string): Promise<void>;
+  openClaude(): Promise<void>;
   setRoles(assign: Partial<Record<TeamKey, RoleAssignment>>): Promise<AutoPayload | null>;
   resetRoles(): Promise<AutoPayload | null>;
   getSettings(): Promise<Settings>;
@@ -90,6 +93,8 @@ const state = {
   live: null as LivePayload | null,
   manual: loadManualDraft(),
   manualAnalysis: null as GameAnalysis | null,
+  hasApiKey: false,
+  copied: false,
   /** Role edits not yet validated, per team, keyed by champion id. */
   pendingRoles: { ally: {}, enemy: {} } as Record<TeamKey, Record<number, Role>>,
   ai: { requestId: 0, status: 'idle' as 'idle' | 'running' | 'done' | 'error', text: '', error: '' },
@@ -738,9 +743,24 @@ function markdown(text: string): HTMLElement {
   return root;
 }
 
+async function copyForClaude(open: boolean): Promise<void> {
+  const a = currentAnalysis();
+  const ctx = currentContext();
+  if (!a || !ctx) return;
+  await api.copyText(buildClaudeAiPrompt(a, ctx));
+  state.copied = true;
+  if (open) await api.openClaude();
+  if (state.tab === 'ai') renderContent();
+  window.setTimeout(() => {
+    state.copied = false;
+    if (state.tab === 'ai') renderContent();
+  }, 6000);
+}
+
 function renderAi(a: GameAnalysis | null): HTMLElement {
   const ai = state.ai;
   const ctx = currentContext();
+  const ready = !!a && !!ctx && a.ally.champions.length + a.enemy.champions.length > 0;
   const run = async () => {
     if (!ctx) return;
     state.ai = { requestId: -1, status: 'running', text: '', error: '' };
@@ -748,26 +768,55 @@ function renderAi(a: GameAnalysis | null): HTMLElement {
     const id = await api.runAi(ctx);
     if (state.ai.requestId === -1) state.ai.requestId = id;
   };
-  return h(
+
+  const claudeCard = h(
     'div',
     { class: 'card' },
+    h('h3', {}, 'Analyse avec Claude.ai (sans clé API)'),
+    h(
+      'p',
+      { class: 'muted' },
+      'Copie la draft et l’analyse automatique, puis colle-les (Ctrl+V) dans une conversation sur claude.ai pour obtenir un plan de jeu détaillé.',
+    ),
+    h(
+      'div',
+      { class: 'ai-actions' },
+      h('button', { class: 'primary', type: 'button', disabled: !ready, onclick: () => void copyForClaude(true) }, 'Copier et ouvrir Claude.ai'),
+      h('button', { class: 'ghost', type: 'button', disabled: !ready, onclick: () => void copyForClaude(false) }, 'Copier seulement'),
+      state.copied ? h('span', { class: 'copied' }, '✓ Copié ! Colle-le avec Ctrl+V dans Claude.ai') : null,
+    ),
+    !ready ? h('p', { class: 'muted' }, 'Disponible dès que des champions sont connus.') : null,
+    a && a.ally.champions.length && !a.complete
+      ? h('p', { class: 'muted' }, 'Astuce : attends que les 10 champions soient lockés pour une analyse complète.')
+      : null,
+    ready ? h('details', { class: 'prompt-preview' }, h('summary', {}, 'Voir le texte copié'), h('pre', {}, buildClaudeAiPrompt(a!, ctx!))) : null,
+  );
+
+  const apiCard = h(
+    'div',
+    { class: 'card' },
+    h('h3', {}, 'Analyse automatique (clé API Anthropic)'),
     h(
       'div',
       { class: 'ai-actions' },
       ai.status === 'running'
         ? h('button', { class: 'ghost', type: 'button', onclick: () => void api.cancelAi() }, 'Annuler')
-        : h('button', { class: 'primary', type: 'button', disabled: !a || !a.ally.champions.length, onclick: () => void run() }, 'Lancer l’analyse IA'),
+        : h('button', { class: state.hasApiKey ? 'primary' : 'ghost', type: 'button', disabled: !ready || !state.hasApiKey, onclick: () => void run() }, 'Lancer l’analyse IA'),
       h(
         'span',
         { class: 'muted' },
         ai.status === 'running'
           ? 'Analyse en cours…'
-          : 'Analyse approfondie de la draft par Claude (nécessite une clé API Anthropic dans les paramètres).',
+          : state.hasApiKey
+            ? 'Le plan s’affiche ici, et se lance tout seul quand les 10 champions sont lockés (réglable dans ⚙).'
+            : 'Optionnel : ajoute une clé API dans ⚙ Paramètres pour que l’analyse se fasse directement dans l’application.',
       ),
     ),
     ai.error ? h('p', { class: 'error' }, ai.error) : null,
-    ai.text ? markdown(ai.text) : ai.status === 'idle' ? h('p', { class: 'muted' }, 'Aucune analyse IA pour cette partie.') : null,
+    ai.text ? markdown(ai.text) : null,
   );
+
+  return h('div', { class: 'ai-tab' }, ...(state.hasApiKey ? [apiCard, claudeCard] : [claudeCard, apiCard]));
 }
 
 function renderContent(): void {
@@ -821,6 +870,8 @@ async function openSettings(): Promise<void> {
       focusOnChampSelect: (form.elements.namedItem('focusOnChampSelect') as HTMLInputElement).checked,
       leagueInstallPath: (form.elements.namedItem('leagueInstallPath') as HTMLInputElement).value,
     });
+    state.hasApiKey = !!(await api.getSettings()).anthropicApiKey;
+    if (state.tab === 'ai') renderContent();
   };
 }
 
@@ -887,6 +938,7 @@ async function boot(): Promise<void> {
     if (state.tab === 'ai') renderContent();
   });
 
+  state.hasApiKey = !!(await api.getSettings()).anthropicApiKey;
   const initial = await api.getState();
   state.status = initial.status;
   state.auto = initial.auto;

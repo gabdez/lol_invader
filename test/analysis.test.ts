@@ -131,3 +131,22 @@ describe('role corrections', () => {
     expect(res.myTeam[1].roleSource).toBe('manual');
   });
 });
+
+describe('Claude.ai prompt', () => {
+  it('contains the instructions, both teams and the local player', async () => {
+    const { buildClaudeAiPrompt } = await import('../src/shared/aiPrompt');
+    const ctx: GameContext = {
+      source: 'manual',
+      phase: 'Manual',
+      side: 'red',
+      myTeam: [slot('Ahri', 'MIDDLE', true), slot('Vi', 'JUNGLE')],
+      enemyTeam: [slot('Zed', null)],
+    };
+    const text = buildClaudeAiPrompt(analyzeGame(catalog, ctx), ctx);
+    expect(text).toMatch(/coach League of Legends/);
+    expect(text).toMatch(/## Mon plan/);
+    expect(text).toMatch(/Mid : Ahri \(MOI\)/);
+    expect(text).toMatch(/Mid : Zed/);
+    expect(text).toMatch(/Côté : rouge/);
+  });
+});

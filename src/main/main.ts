@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import { analyzeGame } from '../shared/analysis';
 import { ChampionCatalog } from '../shared/catalog';
@@ -106,6 +106,8 @@ function registerIpc(watcher: GameWatcher): void {
   ipcMain.handle('manual:analyze', (_e, ctx: GameContext) => analyzeGame(catalog, ctx));
   ipcMain.handle('ai:run', (_e, ctx: GameContext) => startAi(ctx, analyzeGame(catalog, ctx)));
   ipcMain.handle('ai:cancel', () => aiAbort?.abort());
+  ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(String(text)));
+  ipcMain.handle('open:claude', () => shell.openExternal('https://claude.ai/new'));
   ipcMain.handle('roles:set', (_e, assign: { ally?: RoleAssignment; enemy?: RoleAssignment }) => {
     const toMap = (list: RoleAssignment) => Object.fromEntries(list.filter((x) => x.championId > 0).map((x) => [x.championId, x.role]));
     if (assign.ally) roleOverrides.ally = toMap(assign.ally);

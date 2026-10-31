@@ -707,3 +707,33 @@ dialog label.check {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* AI tab */
+.ai-tab {
+  display: grid;
+  gap: 14px;
+}
+.ai-actions {
+  flex-wrap: wrap;
+}
+.copied {
+  color: var(--good);
+  font-weight: 600;
+  font-size: 13px;
+}
+.prompt-preview summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.prompt-preview pre {
+  white-space: pre-wrap;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-height: 320px;
+  overflow: auto;
+}

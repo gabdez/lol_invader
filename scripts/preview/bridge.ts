@@ -45,6 +45,8 @@ let settings: Settings = { anthropicApiKey: '', aiAutoRun: true, focusOnChampSel
     return 1;
   },
   cancelAi: async () => undefined,
+  copyText: async (t: string) => { (window as any).__copied = t; },
+  openClaude: async () => { (window as any).__opened = true; },
   setRoles: async (assign: any) => {
     const toMap = (l: { championId: number; role: Role }[]) => Object.fromEntries(l.map((x) => [x.championId, x.role]));
     if (assign.ally) overrides.ally = toMap(assign.ally);

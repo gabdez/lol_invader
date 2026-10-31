@@ -1,7 +1,6 @@
 import { ROLE_LABELS, type GameAnalysis, type GameContext } from './types';
 
-export const AI_SYSTEM_PROMPT = `Tu es un coach League of Legends de haut niveau (niveau Master+). Tu analyses une draft
-juste après la sélection des champions, pour un joueur qui va lancer la partie dans quelques secondes.
+export const AI_SYSTEM_PROMPT = `Tu es un coach League of Legends de haut niveau (niveau Master+). Tu analyses une draft juste après la sélection des champions, pour un joueur qui va lancer la partie dans quelques secondes. La saison est 2026 (pas d'Atakhan, Baron à 20:00).
 
 Ta réponse doit être en français, directement exploitable en jeu, et structurée en Markdown avec exactement ces sections :
 ## Résumé de la game
@@ -38,4 +37,9 @@ export function buildAiUserPrompt(analysis: GameAnalysis, ctx: GameContext): str
     ...analysis.insights.map((i) => `- ${i.title} : ${i.detail}`),
   ];
   return parts.join('\n');
+}
+
+/** Self-contained prompt to paste into a claude.ai conversation (no API key needed). */
+export function buildClaudeAiPrompt(analysis: GameAnalysis, ctx: GameContext): string {
+  return `${AI_SYSTEM_PROMPT}\n\nVoici la partie que je vais jouer :\n\n${buildAiUserPrompt(analysis, ctx)}`;
 }

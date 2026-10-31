@@ -12,8 +12,8 @@ et analyse la partie **dès la sélection des champions** :
 - **Moments clés** : timeline (invade niveau 1, scuttles, drake, niveau 6, Voidgrubs, plaques, Héraut,
   Baron, pic des hyper carries) adaptée aux deux compos.
 - **En partie** : chrono et prochains objectifs (drake, grubs, Héraut, Baron) depuis l'API live du jeu.
-- **Analyse IA (optionnelle)** : avec une clé API Anthropic, Claude rédige un plan de jeu détaillé
-  automatiquement quand les 10 champions sont lockés.
+- **Analyse IA (optionnelle)** : un bouton copie la draft pour la coller dans Claude.ai (sans clé), ou,
+  avec une clé API Anthropic, Claude rédige le plan directement dans l'appli quand les 10 champions sont lockés.
 - **Draft manuelle** : saisis n'importe quelle draft pour l'analyser sans lancer de partie.
 
 L'analyse de base est **100 % locale** (aucune clé, aucun compte nécessaire) : elle repose sur une base
@@ -66,9 +66,14 @@ sélection suivante ; « Revenir aux lanes détectées » l'annule.
 
 ## Analyse IA
 
-Dans ⚙ Paramètres, colle une clé API Anthropic (stockée chiffrée via le coffre de Windows). L'analyse
-utilise le modèle `claude-opus-5-5` en streaming, avec le fallback côté serveur activé
-(`fallbacks: "default"`). Elle peut être lancée à la main depuis l'onglet « Analyse IA ».
+Deux façons d'obtenir un plan de jeu détaillé rédigé par Claude, depuis l'onglet « Analyse IA » :
+
+- **Sans clé (gratuit)** : « Copier et ouvrir Claude.ai » copie la draft et l'analyse automatique dans le
+  presse-papiers et ouvre claude.ai : il suffit de coller (Ctrl+V) dans la conversation.
+- **Avec une clé API Anthropic** (optionnel, payant à l'usage) : colle-la dans ⚙ Paramètres (stockée
+  chiffrée via le coffre de Windows). L'analyse se fait alors dans l'application, automatiquement quand les
+  10 champions sont lockés, avec le modèle `claude-opus-5-5` en streaming et le fallback côté serveur
+  activé (`fallbacks: "default"`).
 
 ## Développement
 

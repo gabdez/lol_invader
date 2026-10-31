@@ -235,9 +235,6 @@ export function parseLiveGame(data: LiveGameData, catalog: ChampionCatalog): Gam
       case 'HordeKill':
         objectives.push({ type: 'grubs', time: e.EventTime, killerTeam });
         break;
-      case 'AtakhanKill':
-        objectives.push({ type: 'atakhan', time: e.EventTime, killerTeam });
-        break;
     }
   }
 

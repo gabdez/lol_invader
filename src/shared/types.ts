@@ -95,7 +95,7 @@ export type GamePhase =
   | 'Manual';
 
 export interface ObjectiveEvent {
-  type: 'dragon' | 'baron' | 'herald' | 'grubs' | 'atakhan' | 'elder';
+  type: 'dragon' | 'baron' | 'herald' | 'grubs' | 'elder';
   time: number; // seconds of game time
   killerTeam: 'ally' | 'enemy' | 'unknown';
   dragonType?: string;

@@ -3,6 +3,7 @@
 import { analyzeGame } from '../../src/shared/analysis';
 import { ChampionCatalog } from '../../src/shared/catalog';
 import { findCurated } from '../../src/shared/champions';
+import { applyRoleOverrides, countOverrides, emptyOverrides } from '../../src/shared/roles';
 import type { GameContext, PlayerSlot, Role, Settings } from '../../src/shared/types';
 
 const catalog = ChampionCatalog.offline();
@@ -23,12 +24,17 @@ const ctx: GameContext = {
 };
 const params = new URLSearchParams(location.search);
 const withGame = params.has('auto');
+let overrides = emptyOverrides();
+const autoPayload = () => {
+  const c = applyRoleOverrides(ctx, overrides);
+  return { context: c, analysis: analyzeGame(catalog, c), overrideCount: countOverrides(overrides) };
+};
 let settings: Settings = { anthropicApiKey: '', aiAutoRun: true, focusOnChampSelect: true, leagueInstallPath: '' };
 
 (window as any).lol = {
   getState: async () => ({
     status: { client: 'connected', liveGame: params.has('live'), phase: params.has('live') ? 'InProgress' : withGame ? 'ChampSelect' : 'None' },
-    auto: withGame ? { context: ctx, analysis: analyzeGame(catalog, ctx) } : null,
+    auto: withGame ? autoPayload() : null,
     catalog: { version: null, champions: catalog.list() },
   }),
   analyzeManual: async (c: GameContext) => analyzeGame(catalog, c),
@@ -39,6 +45,16 @@ let settings: Settings = { anthropicApiKey: '', aiAutoRun: true, focusOnChampSel
     return 1;
   },
   cancelAi: async () => undefined,
+  setRoles: async (assign: any) => {
+    const toMap = (l: { championId: number; role: Role }[]) => Object.fromEntries(l.map((x) => [x.championId, x.role]));
+    if (assign.ally) overrides.ally = toMap(assign.ally);
+    if (assign.enemy) overrides.enemy = toMap(assign.enemy);
+    return autoPayload();
+  },
+  resetRoles: async () => {
+    overrides = emptyOverrides();
+    return autoPayload();
+  },
   getSettings: async () => settings,
   saveSettings: async (s: Settings) => { settings = s; return true; },
   onStatus: on('status'), onAnalysis: on('analysis'), onLive: on('live'), onAi: on('ai'), onCatalog: on('catalog'),

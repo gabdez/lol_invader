@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeGame } from '../src/shared/analysis';
 import { ChampionCatalog } from '../src/shared/catalog';
 import { CURATED, findCurated } from '../src/shared/champions';
-import { inferRoles } from '../src/shared/roles';
+import { applyRoleOverrides, assignRoleWithSwap, inferRoles } from '../src/shared/roles';
 import type { GameContext, PlayerSlot, Role } from '../src/shared/types';
 
 const catalog = ChampionCatalog.offline();
@@ -104,5 +104,30 @@ describe('analyzeGame', () => {
     const empty = analyzeGame(catalog, { ...ctx, myTeam: [], enemyTeam: [] });
     expect(empty.insights).toEqual([]);
     expect(empty.plan.headline).toMatch(/Choisis/);
+  });
+});
+
+describe('role corrections', () => {
+  it('swaps roles so they stay distinct', () => {
+    expect(assignRoleWithSwap<Role | null>(['TOP', 'JUNGLE', 'MIDDLE'], 2, 'TOP')).toEqual(['MIDDLE', 'JUNGLE', 'TOP']);
+    expect(assignRoleWithSwap<Role | ''>(['TOP', '', ''], 1, 'TOP')).toEqual(['', 'TOP', '']);
+  });
+
+  it('applies overrides and re-infers displaced players', () => {
+    // Enemy roles inferred wrongly: user says Zed is top and Teemo mid.
+    const enemy = ['Teemo', 'Hecarim', 'Zed', 'Draven', 'Leona'].map((n) => slot(n, null));
+    const overrides = { ally: {}, enemy: { [key('Zed')]: 'TOP' as Role, [key('Teemo')]: 'MIDDLE' as Role } };
+    const ctx = applyRoleOverrides({ myTeam: [slot('Darius', 'TOP', true)], enemyTeam: enemy }, overrides);
+    const a = analyzeGame(catalog, { source: 'champselect', phase: 'ChampSelect', side: 'blue', ...ctx });
+    const roles = Object.fromEntries(a.lineup.enemy.map((p) => [p.name, p.role]));
+    expect(roles).toMatchObject({ Zed: 'TOP', Teemo: 'MIDDLE', Hecarim: 'JUNGLE', Draven: 'BOTTOM', Leona: 'UTILITY' });
+    expect(a.matchups.find((m) => m.lane === 'TOP')?.enemies).toEqual(['Zed']);
+  });
+
+  it('clears an assigned role taken by a forced player', () => {
+    const team = [slot('Darius', 'TOP'), slot('Garen', 'MIDDLE')];
+    const res = applyRoleOverrides({ myTeam: team, enemyTeam: [] }, { ally: { [key('Garen')]: 'TOP' }, enemy: {} });
+    expect(res.myTeam.map((p) => p.role)).toEqual([null, 'TOP']);
+    expect(res.myTeam[1].roleSource).toBe('manual');
   });
 });

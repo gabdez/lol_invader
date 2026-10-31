@@ -62,3 +62,48 @@ export function inferRoles(catalog: ChampionCatalog, team: PlayerSlot[]): Player
   });
   return result;
 }
+
+/** Roles forced by the user, per team, keyed by champion id (survives draft updates). */
+export interface RoleOverrides {
+  ally: Record<number, Role>;
+  enemy: Record<number, Role>;
+}
+
+export function emptyOverrides(): RoleOverrides {
+  return { ally: {}, enemy: {} };
+}
+
+export function countOverrides(o: RoleOverrides): number {
+  return Object.keys(o.ally).length + Object.keys(o.enemy).length;
+}
+
+function applyTeamOverrides(team: PlayerSlot[], map: Record<number, Role>): PlayerSlot[] {
+  const forced = new Set(team.filter((p) => p.championId && map[p.championId]).map((p) => map[p.championId]));
+  return team.map((p) => {
+    const role = p.championId ? map[p.championId] : undefined;
+    if (role) return { ...p, role, roleSource: 'manual' as const };
+    // Someone else was forced into this player's role: let the inference re-place this player.
+    if (p.role && forced.has(p.role)) return { ...p, role: null, roleSource: 'inferred' as const };
+    return p;
+  });
+}
+
+/** Applies user role corrections on top of what the client / game reports. */
+export function applyRoleOverrides<T extends { myTeam: PlayerSlot[]; enemyTeam: PlayerSlot[] }>(ctx: T, o: RoleOverrides): T {
+  return { ...ctx, myTeam: applyTeamOverrides(ctx.myTeam, o.ally), enemyTeam: applyTeamOverrides(ctx.enemyTeam, o.enemy) };
+}
+
+/**
+ * Gives `role` to the player at `index`; the player who had that role takes the previous
+ * role of `index` (swap), so roles stay distinct. Works for any value type ('' = auto).
+ */
+export function assignRoleWithSwap<R extends string | null>(roles: R[], index: number, role: R): R[] {
+  const out = [...roles];
+  const previous = out[index];
+  if (role) {
+    const other = out.findIndex((r, k) => k !== index && r === role);
+    if (other >= 0) out[other] = previous;
+  }
+  out[index] = role;
+  return out;
+}

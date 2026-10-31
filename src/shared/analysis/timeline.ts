@@ -44,7 +44,7 @@ export function buildPhases(ally: Resolved[], enemy: Resolved[], a: TeamProfile,
   if (side === 'top') earlyActions.push(`Votre top side est plus fort : priorisez les Voidgrubs (${formatTime(OBJECTIVES.voidgrubs)}).`);
 
   const midActions: string[] = [];
-  if (mid === 'ally') midActions.push('Groupez autour des objectifs (drakes, Atakhan, Herald) et forcez les combats quand vos objets sont là.');
+  if (mid === 'ally') midActions.push(`Groupez autour des objectifs (drakes, Héraut à ${formatTime(OBJECTIVES.herald)}, Baron dès ${formatTime(OBJECTIVES.baron)}) et forcez les combats quand vos objets sont là.`);
   else if (mid === 'enemy') midActions.push('Évitez les combats à 5 sans avantage : farmez les side lanes en sécurité et punissez les erreurs.');
   else midActions.push('Mid game équilibré : la vision autour des objectifs fait la différence.');
   if (topArchetype === 'pick') midActions.push('Placez de la vision profonde et cherchez les catchs sur les joueurs qui farment seuls.');
@@ -121,7 +121,7 @@ export function buildTimeline(ally: Resolved[], enemy: Resolved[], a: TeamProfil
     startSec: OBJECTIVES.voidgrubs,
     severity: 'info',
     title: 'Voidgrubs',
-    detail: 'Utiles aux compos qui split/push des tours. Le top et le jungler doivent avoir la priorité côté top.',
+    detail: `Un seul camp de 3, pas de réapparition (disparaît à ${formatTime(OBJECTIVES.voidgrubsDespawn)}). Utiles aux compos qui poussent les tours : le top et le jungler doivent avoir la priorité côté top.`,
   });
   t.push({
     time: '10:00-13:00',
@@ -137,38 +137,29 @@ export function buildTimeline(ally: Resolved[], enemy: Resolved[], a: TeamProfil
     title: 'Fin des plaques de tour',
     detail: 'Les plaques tombent : les laners commencent à bouger vers les objectifs, c’est le début du mid game.',
   });
+  const midDiff = a.curve.mid - e.curve.mid;
   t.push({
     time: formatTime(OBJECTIVES.herald),
     startSec: OBJECTIVES.herald,
-    severity: 'info',
-    title: 'Héraut de la Faille',
-    detail: 'Idéal pour ouvrir une tour externe et étendre la carte.',
-  });
-  const midDiff = a.curve.mid - e.curve.mid;
-  t.push({
-    time: formatTime(OBJECTIVES.atakhan),
-    startSec: OBJECTIVES.atakhan,
     severity: midDiff >= 0.2 ? 'good' : midDiff <= -0.2 ? 'warning' : 'info',
-    title: 'Atakhan',
-    detail:
-      midDiff >= 0.2
-        ? 'Vous êtes plus forts en mid game : forcez le combat autour d’Atakhan.'
-        : midDiff <= -0.2
-          ? "L'ennemi est plus fort à ce moment : ne le contestez qu'avec un avantage numérique."
-          : 'Objectif équilibré : préparez la vision 1 minute avant.',
+    title: 'Héraut de la Faille',
+    detail: `Une seule apparition (disparaît à ${formatTime(OBJECTIVES.heraldDespawn)}). Idéal pour ouvrir une tour externe et étendre la carte.${
+      midDiff >= 0.2 ? ' Vous êtes plus forts à ce stade : forcez le combat autour.' : midDiff <= -0.2 ? " L'ennemi est plus fort à ce stade : ne le contestez qu'avec un avantage numérique." : ''
+    }`,
   });
-  const lateDiff = a.curve.late - e.curve.late;
+  // Baron arrives at 20:00 (mid game): weigh mid and late power.
+  const baronDiff = (a.curve.mid + a.curve.late) / 2 - (e.curve.mid + e.curve.late) / 2;
   t.push({
     time: formatTime(OBJECTIVES.baron),
     startSec: OBJECTIVES.baron,
-    severity: lateDiff >= 0.2 ? 'good' : lateDiff <= -0.2 ? 'danger' : 'info',
+    severity: baronDiff >= 0.2 ? 'good' : baronDiff <= -0.2 ? 'danger' : 'info',
     title: 'Baron Nashor',
     detail:
-      lateDiff >= 0.2
+      baronDiff >= 0.2
         ? 'Votre compo prend le dessus : jouez Baron après un pick ou un combat gagné.'
-        : lateDiff <= -0.2
-          ? "L'ennemi devient plus fort : surveillez le Baron, ne laissez pas leur compo l'obtenir gratuitement."
-          : 'Baron = fin de partie possible : vision et regroupement avant tout.',
+        : baronDiff <= -0.2
+          ? "L'ennemi est plus fort autour de 20 min : surveillez le Baron, ne laissez pas leur compo l'obtenir gratuitement."
+          : 'Baron = fin de partie possible : vision et regroupement 1 minute avant.',
   });
   const hyper = [...withTag(ally, 'hyper'), ...withTag(enemy, 'hyper')];
   if (hyper.length) {

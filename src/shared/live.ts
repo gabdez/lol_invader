@@ -24,9 +24,9 @@ export function upcomingObjectives(gameTime: number, events: ObjectiveEvent[]): 
     at: lastDragon >= 0 ? lastDragon + (soulTaken ? OBJECTIVES.elderRespawn : OBJECTIVES.dragonRespawn) : OBJECTIVES.firstDragon,
     inSec: 0,
   });
-  if (last('grubs') === null && gameTime < OBJECTIVES.herald) out.push({ label: 'Voidgrubs', at: OBJECTIVES.voidgrubs, inSec: 0 });
-  if (last('herald') === null) out.push({ label: 'Héraut', at: OBJECTIVES.herald, inSec: 0 });
-  if (last('atakhan') === null) out.push({ label: 'Atakhan', at: OBJECTIVES.atakhan, inSec: 0 });
+  // One-time objectives, removed once taken or despawned.
+  if (last('grubs') === null && gameTime < OBJECTIVES.voidgrubsDespawn) out.push({ label: 'Voidgrubs', at: OBJECTIVES.voidgrubs, inSec: 0 });
+  if (last('herald') === null && gameTime < OBJECTIVES.heraldDespawn) out.push({ label: 'Héraut', at: OBJECTIVES.herald, inSec: 0 });
   const lastBaron = last('baron');
   out.push({ label: 'Baron', at: lastBaron !== null ? lastBaron + OBJECTIVES.baronRespawn : OBJECTIVES.baron, inSec: 0 });
 

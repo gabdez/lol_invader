@@ -106,7 +106,7 @@ function roleTips(role: Role, me: Resolved, ally: Resolved[], enemy: Resolved[],
       if (enemyJg && enemyJg.t.tags.includes('invade')) {
         out.push(`${enemyJg.t.name} aime invader : ward l'entrée de ta jungle vers 1:30 et 2:45.`);
       }
-      out.push(`Objectifs : drake à ${formatTime(OBJECTIVES.firstDragon)}, Voidgrubs à ${formatTime(OBJECTIVES.voidgrubs)}. Choisis selon la priorité de tes laners.`);
+      out.push(`Objectifs : drake à ${formatTime(OBJECTIVES.firstDragon)}, Voidgrubs à ${formatTime(OBJECTIVES.voidgrubs)} (une seule fois, disparaissent à ${formatTime(OBJECTIVES.voidgrubsDespawn)}), Héraut à ${formatTime(OBJECTIVES.herald)}, Baron à ${formatTime(OBJECTIVES.baron)}. Choisis selon la priorité de tes laners.`);
       if (allyP.scores.split >= enemyP.scores.split) out.push('Les Voidgrubs servent bien votre compo (pression sur les tours).');
       if (allyLate >= 0.3) out.push('Ta compo scale : prends les drakes en sécurité, l’âme du dragon est une vraie condition de victoire.');
       if (allyLate <= -0.3) out.push('Ta compo doit accélérer : enchaîne ganks + objectifs, ne fais pas que farm.');
@@ -121,8 +121,8 @@ function roleTips(role: Role, me: Resolved, ally: Resolved[], enemy: Resolved[],
     }
     case 'TOP': {
       if (t.split >= 3) out.push('Après 14 min, mets la pression en side lane : force au moins un ennemi à venir te répondre.');
-      else out.push('Après la phase de lane, rejoins ton équipe pour les objectifs : ton TP doit servir les drakes/Atakhan.');
-      out.push(`Les Voidgrubs (${formatTime(OBJECTIVES.voidgrubs)}) se jouent avec toi : garde la priorité sur ta vague à ce moment-là.`);
+      else out.push('Après la phase de lane, rejoins ton équipe pour les objectifs : ton TP doit servir les drakes et le Baron (20:00).');
+      out.push(`Les Voidgrubs (${formatTime(OBJECTIVES.voidgrubs)}, une seule fois) puis le Héraut (${formatTime(OBJECTIVES.herald)}) se jouent avec toi : garde la priorité sur ta vague à ces moments-là.`);
       if (t.tank >= 3) out.push('Tu es la frontline : achète tes objets défensifs en fonction des dégâts adverses.');
       break;
     }

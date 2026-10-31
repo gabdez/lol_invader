@@ -10,8 +10,8 @@ et analyse la partie **dès la sélection des champions** :
 - **Compositions** : identité de chaque équipe (engage, poke, pick, split, dive, protect the carry…),
   conditions de victoire, profil de dégâts AD/AP, comparaison des forces.
 - **Moments clés** : timeline (invade niveau 1, scuttles, drake, niveau 6, Voidgrubs, plaques, Héraut,
-  Atakhan, Baron, pic des hyper carries) adaptée aux deux compos.
-- **En partie** : chrono et prochains objectifs (drake, grubs, Héraut, Atakhan, Baron) depuis l'API live du jeu.
+  Baron, pic des hyper carries) adaptée aux deux compos.
+- **En partie** : chrono et prochains objectifs (drake, grubs, Héraut, Baron) depuis l'API live du jeu.
 - **Analyse IA (optionnelle)** : avec une clé API Anthropic, Claude rédige un plan de jeu détaillé
   automatiquement quand les 10 champions sont lockés.
 - **Draft manuelle** : saisis n'importe quelle draft pour l'analyser sans lancer de partie.
@@ -46,7 +46,13 @@ Ces API sont locales et en lecture seule (Riot les met à disposition des applic
 l'application ne modifie rien dans le client ou le jeu.
 
 Les rôles ennemis ne sont pas fournis par le client en sélection classée : ils sont déduits (rôles
-habituels du champion, Smite une fois en jeu) et marqués « (déduit) ».
+habituels du champion, Smite une fois en jeu) et marqués « déduit ».
+
+**Corriger une lane** : chaque joueur (allié ou ennemi) a un menu de lane. Choisir une lane échange
+automatiquement avec le joueur qui l'occupait, puis **« Valider et relancer l'analyse »** (ou Entrée)
+recalcule tout : match-ups lane contre lane, plan, timeline, et relance l'analyse IA si elle est activée.
+La correction reste appliquée pendant toute la partie (sélection, chargement, en jeu) et est oubliée à la
+sélection suivante ; « Revenir aux lanes détectées » l'annule.
 
 ## Ajuster l'analyse
 
@@ -54,7 +60,8 @@ habituels du champion, Smite une fois en jeu) et marqués « (déduit) ».
   de CC, engage, poke, burst, DPS, tank, mobilité, sustain, waveclear, split push, peel, et des tags comme
   `hyper`, `invade`, `roam`, `heal`…). Les champions absents (nouvelles sorties) sont estimés à partir
   de leur classe Data Dragon.
-- `src/shared/objectives.ts` : timings des objectifs (à mettre à jour si Riot change la carte).
+- `src/shared/objectives.ts` : timings des objectifs, saison 2026 (drake 5:00, Voidgrubs 8:00 une seule fois,
+  Héraut 15:00, Baron 20:00, plus d'Atakhan). À mettre à jour si Riot change la carte.
 - `src/shared/analysis/` : règles (profils d'équipe, match-ups, plan par rôle, timeline).
 
 ## Analyse IA

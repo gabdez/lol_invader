@@ -1,4 +1,5 @@
 import { formatTime } from '../shared/analysis/util';
+import { assignRoleWithSwap } from '../shared/roles';
 import { currentPhase, upcomingObjectives } from '../shared/live';
 import {
   ROLE_LABELS,
@@ -26,7 +27,10 @@ interface CatalogPayload {
 interface AutoPayload {
   context: GameContext;
   analysis: GameAnalysis;
+  overrideCount: number;
 }
+type TeamKey = 'ally' | 'enemy';
+type RoleAssignment = { championId: number; role: Role }[];
 interface LivePayload {
   gameTime: number;
   objectives: ObjectiveEvent[];
@@ -36,6 +40,8 @@ interface LolApi {
   analyzeManual(ctx: GameContext): Promise<GameAnalysis>;
   runAi(ctx: GameContext): Promise<number>;
   cancelAi(): Promise<void>;
+  setRoles(assign: Partial<Record<TeamKey, RoleAssignment>>): Promise<AutoPayload | null>;
+  resetRoles(): Promise<AutoPayload | null>;
   getSettings(): Promise<Settings>;
   saveSettings(s: Settings): Promise<boolean>;
   onStatus(cb: (s: ConnectionStatus) => void): () => void;
@@ -84,6 +90,8 @@ const state = {
   live: null as LivePayload | null,
   manual: loadManualDraft(),
   manualAnalysis: null as GameAnalysis | null,
+  /** Role edits not yet validated, per team, keyed by champion id. */
+  pendingRoles: { ally: {}, enemy: {} } as Record<TeamKey, Record<number, Role>>,
   ai: { requestId: 0, status: 'idle' as 'idle' | 'running' | 'done' | 'error', text: '', error: '' },
 };
 
@@ -215,36 +223,136 @@ function versusBlock(a: GameAnalysis | null): HTMLElement {
   );
 }
 
+function hasPendingRoles(): boolean {
+  return Object.keys(state.pendingRoles.ally).length + Object.keys(state.pendingRoles.enemy).length > 0;
+}
+
+/** Roles shown for a team: detected/inferred roles with not-yet-validated edits on top. */
+function displayedRoles(team: TeamKey): (Role | null)[] {
+  const a = state.auto?.analysis;
+  const ctx = state.auto?.context;
+  if (!a || !ctx) return [];
+  const slots = team === 'ally' ? ctx.myTeam : ctx.enemyTeam;
+  const lineup = team === 'ally' ? a.lineup.ally : a.lineup.enemy;
+  return lineup.map((p, i) => state.pendingRoles[team][slots[i]?.championId] ?? p.role);
+}
+
+function editRole(team: TeamKey, index: number, role: Role): void {
+  const ctx = state.auto?.context;
+  if (!ctx) return;
+  const slots = team === 'ally' ? ctx.myTeam : ctx.enemyTeam;
+  const roles = assignRoleWithSwap(displayedRoles(team), index, role);
+  const pending: Record<number, Role> = {};
+  slots.forEach((slot, i) => {
+    if (slot.championId && roles[i]) pending[slot.championId] = roles[i]!;
+  });
+  state.pendingRoles[team] = pending;
+  renderAutoDraft();
+}
+
+async function validateRoles(): Promise<void> {
+  const assign: Partial<Record<TeamKey, RoleAssignment>> = {};
+  for (const team of ['ally', 'enemy'] as const) {
+    const entries = Object.entries(state.pendingRoles[team]);
+    if (entries.length) assign[team] = entries.map(([id, role]) => ({ championId: Number(id), role }));
+  }
+  const result = await api.setRoles(assign);
+  state.pendingRoles = { ally: {}, enemy: {} };
+  if (result) state.auto = result;
+  renderAutoDraft();
+  renderContent();
+}
+
+function cancelRoleEdits(): void {
+  state.pendingRoles = { ally: {}, enemy: {} };
+  renderAutoDraft();
+}
+
+async function resetRoles(): Promise<void> {
+  state.pendingRoles = { ally: {}, enemy: {} };
+  const result = await api.resetRoles();
+  if (result) state.auto = result;
+  renderAutoDraft();
+  renderContent();
+}
+
+/** Action bar shown in the middle column when lanes were edited. */
+function rolesBar(): HTMLElement | null {
+  if (hasPendingRoles()) {
+    return h(
+      'div',
+      { class: 'roles-bar' },
+      h('div', { class: 'roles-msg' }, 'Lanes modifiées'),
+      h('button', { class: 'primary', type: 'button', onclick: () => void validateRoles() }, 'Valider et relancer l’analyse'),
+      h('button', { class: 'ghost small', type: 'button', onclick: cancelRoleEdits }, 'Annuler'),
+    );
+  }
+  if (state.auto?.overrideCount) {
+    return h(
+      'div',
+      { class: 'roles-bar' },
+      h('div', { class: 'roles-msg muted' }, 'Lanes corrigées à la main'),
+      h('button', { class: 'ghost small', type: 'button', onclick: () => void resetRoles() }, 'Revenir aux lanes détectées'),
+    );
+  }
+  return null;
+}
+
 function renderAutoDraft(): void {
   const a = state.auto?.analysis ?? null;
   const ctx = state.auto?.context;
   const row = (
+    team: TeamKey,
+    i: number,
     p: { name: string; id: string; role: Role | null; locked: boolean; isLocalPlayer?: boolean },
     slot: PlayerSlot | undefined,
-  ) =>
-    h(
+    shownRole: Role | null,
+  ) => {
+    const changed = shownRole !== p.role;
+    const source = changed ? 'modifié' : slot?.roleSource === 'manual' ? 'corrigé' : slot?.roleSource === 'inferred' && shownRole ? 'déduit' : '';
+    const select = h(
+      'select',
+      {
+        class: `role-select${changed ? ' changed' : ''}`,
+        title: 'Changer la lane de ce joueur',
+        disabled: !slot?.championId,
+        onchange: (e: Event) => editRole(team, i, (e.target as HTMLSelectElement).value as Role),
+      },
+      shownRole ? null : h('option', { value: '', selected: true, disabled: true }, 'Lane ?'),
+      ROLES.map((r) => h('option', { value: r, selected: shownRole === r }, ROLE_LABELS[r])),
+    );
+    return h(
       'div',
-      { class: `player${p.isLocalPlayer ? ' me' : ''}${!p.locked ? ' pending' : ''}` },
+      { class: `player${p.isLocalPlayer ? ' me' : ''}${!p.locked ? ' pending' : ''}${changed ? ' role-changed' : ''}` },
       avatar(p.id, p.name),
       h(
         'div',
         { class: 'who' },
         h('div', { class: 'name' }, p.name || 'En attente…'),
-        h(
-          'div',
-          { class: 'role' },
-          p.role ? `${ROLE_LABELS[p.role]}${slot?.roleSource === 'inferred' ? ' (déduit)' : ''}` : 'Rôle inconnu',
-        ),
+        h('div', { class: 'role' }, select, source ? h('span', { class: 'role-src' }, source) : null),
       ),
       p.isLocalPlayer ? h('span', { class: 'badge gold' }, 'VOUS') : null,
       p.name && !p.locked ? h('span', { class: 'badge' }, 'intention') : null,
     );
-  const allyRows = a ? a.lineup.ally.map((p, i) => row(p, ctx?.myTeam[i])) : [];
-  const enemyRows = a ? a.lineup.enemy.map((p, i) => row(p, ctx?.enemyTeam[i])) : [];
+  };
+  const allyRoles = displayedRoles('ally');
+  const enemyRoles = displayedRoles('enemy');
+  const allyRows = a ? a.lineup.ally.map((p, i) => row('ally', i, p, ctx?.myTeam[i], allyRoles[i])) : [];
+  const enemyRows = a ? a.lineup.enemy.map((p, i) => row('enemy', i, p, ctx?.enemyTeam[i], enemyRoles[i])) : [];
+  const versus = versusBlock(a);
+  const bar = rolesBar();
+  if (bar) versus.append(bar);
   $('draft').replaceChildren(
     h('div', { class: 'team ally' }, h('h3', {}, 'Votre équipe'), allyRows.length ? allyRows : h('p', { class: 'muted' }, 'En attente de la sélection…')),
-    versusBlock(a),
-    h('div', { class: 'team enemy' }, h('h3', {}, 'Équipe adverse'), enemyRows.length ? enemyRows : h('p', { class: 'muted' }, 'En attente de la sélection…')),
+    versus,
+    h(
+      'div',
+      { class: 'team enemy' },
+      h('h3', {}, 'Équipe adverse'),
+      ctx?.enemyTeam.some((p) => p.championId && p.roleSource === 'inferred')
+        ? h('p', { class: 'hint' }, 'Lanes déduites : si une lane est fausse, change-la puis clique sur « Valider ».')
+        : null,
+      enemyRows.length ? enemyRows : h('p', { class: 'muted' }, 'En attente de la sélection…')),
   );
 }
 
@@ -296,7 +404,11 @@ function renderManualDraft(): void {
       'select',
       {
         onchange: (e: Event) => {
-          row.role = (e.target as HTMLSelectElement).value as Role | '';
+          // Swap with the player who had this lane so lanes stay distinct.
+          const rows = state.manual.ally.includes(row) ? state.manual.ally : state.manual.enemy;
+          const roles = assignRoleWithSwap(rows.map((r) => r.role), rows.indexOf(row), (e.target as HTMLSelectElement).value as Role | '');
+          rows.forEach((r, k) => (r.role = roles[k]));
+          renderManualDraft();
           scheduleManualAnalysis();
         },
       },
@@ -730,6 +842,10 @@ async function boot(): Promise<void> {
   $('mode-auto').addEventListener('click', () => setMode('auto'));
   $('mode-manual').addEventListener('click', () => setMode('manual'));
   $('open-settings').addEventListener('click', () => void openSettings());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && state.mode === 'auto' && hasPendingRoles()) void validateRoles();
+    if (e.key === 'Escape' && state.mode === 'auto' && hasPendingRoles()) cancelRoleEdits();
+  });
 
   api.onStatus((s) => {
     state.status = s;

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' https://ddragon.leagueoflegends.com data:; style-src 'self'; script-src 'self'"
+    />
+    <title>LoL Invader</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">LoL <span>Invader</span></div>
+      <div id="status" class="status"></div>
+      <div class="modes">
+        <button id="mode-auto" class="mode active" type="button">Partie en cours</button>
+        <button id="mode-manual" class="mode" type="button">Draft manuelle</button>
+      </div>
+      <button id="open-settings" class="icon-btn" type="button" title="Paramètres">⚙</button>
+    </header>
+
+    <main>
+      <section id="draft" class="draft"></section>
+      <section id="live" class="live hidden"></section>
+      <nav id="tabs" class="tabs"></nav>
+      <section id="content" class="content"></section>
+    </main>
+
+    <dialog id="settings">
+      <form method="dialog" id="settings-form">
+        <h2>Paramètres</h2>
+        <label>
+          Clé API Anthropic (optionnelle, pour l'analyse IA)
+          <input type="password" name="anthropicApiKey" autocomplete="off" placeholder="sk-ant-..." />
+        </label>
+        <label class="check">
+          <input type="checkbox" name="aiAutoRun" />
+          Lancer l'analyse IA automatiquement quand les 10 champions sont lockés
+        </label>
+        <label class="check">
+          <input type="checkbox" name="focusOnChampSelect" />
+          Mettre l'application au premier plan au début de la sélection des champions
+        </label>
+        <label>
+          Dossier d'installation de League of Legends (si non détecté automatiquement)
+          <input type="text" name="leagueInstallPath" placeholder="C:\Riot Games\League of Legends" />
+        </label>
+        <div class="dialog-actions">
+          <button value="cancel" type="submit" class="ghost">Annuler</button>
+          <button value="save" type="submit" class="primary">Enregistrer</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

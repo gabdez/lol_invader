@@ -1,7 +1,0 @@
-{
-  "appId": "com.example.lolInvader",
-  "appName": "Lol_invader",
-  "bundledWebRuntime": false,
-  "webDir": "dist",
-  "allowMixedContent": true
-}

@@ -1,5 +1,6 @@
 import { formatTime } from '../shared/analysis/util';
 import { buildClaudeAiPrompt } from '../shared/aiPrompt';
+import { formatGold, goldAmount, type EconAlert, type EconomySnapshot, type LaneEcon, type PlayerEcon } from '../shared/economy';
 import { assignRoleWithSwap } from '../shared/roles';
 import { currentPhase, upcomingObjectives } from '../shared/live';
 import {
@@ -35,6 +36,8 @@ type RoleAssignment = { championId: number; role: Role }[];
 interface LivePayload {
   gameTime: number;
   objectives: ObjectiveEvent[];
+  economy: EconomySnapshot | null;
+  alerts: EconAlert[];
 }
 interface LolApi {
   getState(): Promise<{ status: ConnectionStatus; auto: AutoPayload | null; catalog: CatalogPayload }>;
@@ -65,8 +68,9 @@ let lastLiveRefresh = -1;
 // State
 // ---------------------------------------------------------------------------
 
-type Tab = 'plan' | 'matchups' | 'compo' | 'timeline' | 'ai';
+type Tab = 'live' | 'plan' | 'matchups' | 'compo' | 'timeline' | 'ai';
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'live', label: 'En direct' },
   { id: 'plan', label: 'Mon plan' },
   { id: 'matchups', label: 'Match-ups' },
   { id: 'compo', label: 'Compositions' },
@@ -485,6 +489,20 @@ function renderDraft(): void {
 // Live in-game bar
 // ---------------------------------------------------------------------------
 
+function liveEconomy(): EconomySnapshot | null {
+  return state.mode === 'auto' && state.status.liveGame ? (state.live?.economy ?? null) : null;
+}
+
+function goldChip(e: EconomySnapshot): HTMLElement {
+  const cls = e.goldDiff >= 1000 ? ' up' : e.goldDiff <= -1000 ? ' behind' : '';
+  const arrow = e.goldDiff > 0 ? '▲' : e.goldDiff < 0 ? '▼' : '=';
+  return h(
+    'span',
+    { class: `chip gold-chip${cls}`, title: 'Valeur des objets (comme le Tab en jeu) — vous / ennemis' },
+    `Or objets ${goldAmount(e.allyGold)} – ${goldAmount(e.enemyGold)} (${arrow} ${formatGold(e.goldDiff)}) · Kills ${e.allyKills}–${e.enemyKills}`,
+  );
+}
+
 function renderLive(): void {
   const el = $('live');
   if (state.mode !== 'auto' || !state.live || !state.status.liveGame) {
@@ -498,6 +516,7 @@ function renderLive(): void {
   el.replaceChildren(
     h('span', { class: 'clock' }, formatTime(gameTime)),
     h('span', { class: 'badge gold' }, phaseLabel),
+    ...(state.live.economy ? [goldChip(state.live.economy)] : []),
     ...next.map((o) =>
       h(
         'span',
@@ -514,7 +533,7 @@ function renderLive(): void {
 
 function renderTabs(): void {
   $('tabs').replaceChildren(
-    ...TABS.map((t) =>
+    ...TABS.filter((t) => t.id !== 'live' || liveEconomy()).map((t) =>
       h(
         'button',
         {
@@ -747,7 +766,7 @@ async function copyForClaude(open: boolean): Promise<void> {
   const a = currentAnalysis();
   const ctx = currentContext();
   if (!a || !ctx) return;
-  await api.copyText(buildClaudeAiPrompt(a, ctx));
+  await api.copyText(buildClaudeAiPrompt(a, ctx, liveEconomy()));
   state.copied = true;
   if (open) await api.openClaude();
   if (state.tab === 'ai') renderContent();
@@ -789,7 +808,7 @@ function renderAi(a: GameAnalysis | null): HTMLElement {
     a && a.ally.champions.length && !a.complete
       ? h('p', { class: 'muted' }, 'Astuce : attends que les 10 champions soient lockés pour une analyse complète.')
       : null,
-    ready ? h('details', { class: 'prompt-preview' }, h('summary', {}, 'Voir le texte copié'), h('pre', {}, buildClaudeAiPrompt(a!, ctx!))) : null,
+    ready ? h('details', { class: 'prompt-preview' }, h('summary', {}, 'Voir le texte copié'), h('pre', {}, buildClaudeAiPrompt(a!, ctx!, liveEconomy()))) : null,
   );
 
   const apiCard = h(
@@ -819,6 +838,88 @@ function renderAi(a: GameAnalysis | null): HTMLElement {
   return h('div', { class: 'ai-tab' }, ...(state.hasApiKey ? [apiCard, claudeCard] : [claudeCard, apiCard]));
 }
 
+function diffText(n: number, unit = ''): string {
+  const arrow = n > 0 ? '▲' : n < 0 ? '▼' : '=';
+  return `${arrow} ${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}${unit}`;
+}
+
+function playerCell(p: PlayerEcon, side: 'ally' | 'enemy'): HTMLElement {
+  const info = state.catalog.champions.find((c) => c.name === p.name);
+  return h(
+    'div',
+    { class: `econ-player ${side}${p.isDead ? ' dead' : ''}` },
+    avatar(info?.id ?? '', p.name),
+    h(
+      'div',
+      {},
+      h('div', { class: 'name' }, p.name, p.isDead ? h('span', { class: 'badge' }, `mort ${Math.round(p.respawnTimer)} s`) : null),
+      h('div', { class: 'muted small' }, `Niv. ${p.level} · ${p.kills}/${p.deaths}/${p.assists} · ${p.cs} CS`),
+      h('div', { class: 'gold-val' }, `${goldAmount(p.itemGold)} or`, p.completedItems.length ? h('span', { class: 'muted small' }, ` · ${p.completedItems.length} objet(s) fini(s)`) : null),
+    ),
+  );
+}
+
+function laneRow(l: LaneEcon): HTMLElement {
+  const cls = l.goldDiff >= 500 ? 'pos' : l.goldDiff <= -500 ? 'neg' : '';
+  return h(
+    'div',
+    { class: `econ-lane${l.isMyLane ? ' mine' : ''}` },
+    h('div', { class: 'econ-role' }, ROLE_LABELS[l.role], l.isMyLane ? h('span', { class: 'badge gold' }, 'TOI') : null),
+    playerCell(l.ally, 'ally'),
+    h(
+      'div',
+      { class: 'econ-diff' },
+      h('div', { class: `verdict ${cls}` }, `${l.goldDiff > 0 ? '▲' : l.goldDiff < 0 ? '▼' : '='} ${formatGold(l.goldDiff)} or`),
+      h('div', { class: 'muted small' }, `CS ${diffText(l.csDiff)} · Niv. ${diffText(l.levelDiff)}`),
+    ),
+    playerCell(l.enemy, 'enemy'),
+  );
+}
+
+function renderLiveTab(): HTMLElement {
+  const e = liveEconomy();
+  if (!e) return h('div', { class: 'empty' }, 'Les données en direct apparaissent une fois la partie lancée.');
+  const alerts = state.live?.alerts ?? [];
+  return h(
+    'div',
+    {},
+    h(
+      'div',
+      { class: 'grid' },
+      h(
+        'div',
+        { class: 'card' },
+        h('h3', {}, 'Conseils en direct'),
+        e.advice.length
+          ? e.advice.map((i) =>
+              h('div', { class: `insight ${i.severity}` }, h('span', { class: 'ico', 'aria-hidden': 'true' }, SEVERITY_ICON[i.severity]), h('div', {}, h('b', {}, i.title), i.detail)),
+            )
+          : h('p', { class: 'muted' }, 'Rien de particulier : joue ton plan.'),
+      ),
+      h(
+        'div',
+        { class: 'card' },
+        h('h3', {}, 'Économie'),
+        h(
+          'div',
+          { class: 'econ-summary' },
+          h('div', {}, h('div', { class: 'muted small' }, 'Votre équipe'), h('div', { class: 'big ally-text' }, goldAmount(e.allyGold))),
+          h('div', {}, h('div', { class: 'muted small' }, 'Écart'), h('div', { class: `big ${e.goldDiff >= 0 ? 'pos' : 'neg'}` }, `${e.goldDiff > 0 ? '▲' : e.goldDiff < 0 ? '▼' : '='} ${formatGold(e.goldDiff)}`)),
+          h('div', {}, h('div', { class: 'muted small' }, 'Équipe adverse'), h('div', { class: 'big enemy-text' }, goldAmount(e.enemyGold))),
+        ),
+        h('p', { class: 'muted small' }, 'Valeur des objets achetés (comme le Tab en jeu). L’or non dépensé des autres joueurs n’est pas visible.'),
+        e.myGold !== null ? h('p', {}, `Ton or actuel : `, h('b', {}, `${Math.floor(e.myGold)}`)) : null,
+        h('h4', {}, 'Achats adverses'),
+        alerts.length
+          ? h('ul', {}, alerts.map((a) => h('li', {}, h('span', { class: 'tl-time' }, formatTime(a.time)), a.text)))
+          : h('p', { class: 'muted' }, 'Aucun objet majeur terminé pour l’instant.'),
+      ),
+    ),
+    h('h3', {}, 'Lane contre lane'),
+    h('div', { class: 'card' }, e.lanes.length ? e.lanes.map(laneRow) : h('p', { class: 'muted' }, 'Lanes inconnues.')),
+  );
+}
+
 function renderContent(): void {
   const a = currentAnalysis();
   const el = $('content');
@@ -841,6 +942,7 @@ function renderContent(): void {
     return;
   }
   const views: Record<Exclude<Tab, 'ai'>, (a: GameAnalysis) => HTMLElement> = {
+    live: renderLiveTab,
     plan: renderPlan,
     matchups: renderMatchups,
     compo: renderCompo,
@@ -902,6 +1004,11 @@ async function boot(): Promise<void> {
     state.status = s;
     renderStatus();
     renderLive();
+    if (!s.liveGame && state.tab === 'live') {
+      state.tab = 'plan'; // game over: the live tab disappears
+      renderContent();
+    }
+    renderTabs();
   });
   api.onCatalog((c) => {
     state.catalog = c;
@@ -915,8 +1022,16 @@ async function boot(): Promise<void> {
     }
   });
   api.onLive((p) => {
+    const firstEconomy = !state.live?.economy && !!p.economy;
     state.live = p;
     renderLive();
+    if (firstEconomy && state.mode === 'auto') {
+      state.tab = 'live'; // a game just started: show the live tab
+      renderTabs();
+      renderContent();
+    } else if (state.mode === 'auto' && state.tab === 'live') {
+      renderContent();
+    }
     if (state.mode === 'auto' && (state.tab === 'timeline' || state.tab === 'plan')) {
       // refresh "past" markers / current phase without re-rendering every second
       const minute = Math.floor(p.gameTime / 30);

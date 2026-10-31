@@ -1,3 +1,5 @@
+import { formatTime } from './analysis/util';
+import type { EconomySnapshot } from './economy';
 import { ROLE_LABELS, type GameAnalysis, type GameContext } from './types';
 
 export const AI_SYSTEM_PROMPT = `Tu es un coach League of Legends de haut niveau (niveau Master+). Tu analyses une draft juste après la sélection des champions, pour un joueur qui va lancer la partie dans quelques secondes. La saison est 2026 (pas d'Atakhan, Baron à 20:00).
@@ -39,7 +41,25 @@ export function buildAiUserPrompt(analysis: GameAnalysis, ctx: GameContext): str
   return parts.join('\n');
 }
 
+/** Live situation summary (economy, scores) appended when the game is in progress. */
+export function buildLiveSituation(e: EconomySnapshot): string {
+  const sign = (n: number) => (n > 0 ? `+${n}` : String(n));
+  const lines = [
+    `Situation en direct à ${formatTime(e.gameTime)} :`,
+    `- Or des objets : mon équipe ${e.allyGold}, adversaires ${e.enemyGold} (écart ${sign(e.goldDiff)}) ; kills ${e.allyKills}-${e.enemyKills}`,
+    ...e.lanes.map(
+      (l) =>
+        `- ${ROLE_LABELS[l.role]} : ${l.ally.name} niv.${l.ally.level} ${l.ally.kills}/${l.ally.deaths}/${l.ally.assists} ${l.ally.cs}CS vs ${l.enemy.name} niv.${l.enemy.level} ${l.enemy.kills}/${l.enemy.deaths}/${l.enemy.assists} ${l.enemy.cs}CS (or ${sign(l.goldDiff)})${l.isMyLane ? ' ← MOI' : ''}`,
+    ),
+  ];
+  if (e.myGold !== null) lines.push(`- Mon or non dépensé : ${Math.floor(e.myGold)}`);
+  return lines.join('\n');
+}
+
 /** Self-contained prompt to paste into a claude.ai conversation (no API key needed). */
-export function buildClaudeAiPrompt(analysis: GameAnalysis, ctx: GameContext): string {
-  return `${AI_SYSTEM_PROMPT}\n\nVoici la partie que je vais jouer :\n\n${buildAiUserPrompt(analysis, ctx)}`;
+export function buildClaudeAiPrompt(analysis: GameAnalysis, ctx: GameContext, live?: EconomySnapshot | null): string {
+  const base = `${AI_SYSTEM_PROMPT}\n\nVoici la partie ${live ? 'en cours' : 'que je vais jouer'} :\n\n${buildAiUserPrompt(analysis, ctx)}`;
+  return live
+    ? `${base}\n\n${buildLiveSituation(live)}\n\nLa partie est en cours : adapte surtout « Mon plan » et les prochaines minutes à cette situation.`
+    : base;
 }

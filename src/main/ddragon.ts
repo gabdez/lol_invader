@@ -4,6 +4,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ChampionCatalog } from '../shared/catalog';
+import type { ItemPrices } from '../shared/economy';
 import type { ChampionInfo } from '../shared/types';
 
 const BASE = 'https://ddragon.leagueoflegends.com';
@@ -63,4 +64,32 @@ export async function loadCatalog(cacheDir: string): Promise<ChampionCatalog> {
 
 export function championImageUrl(version: string | null, image: string): string | null {
   return version ? `${BASE}/cdn/${version}/img/champion/${image}` : null;
+}
+
+interface DdItem {
+  name: string;
+  gold: { total: number };
+  into?: string[];
+}
+
+/** Item names and total costs (used to value inventories in game). */
+export async function loadItemPrices(cacheDir: string, version: string | null): Promise<ItemPrices> {
+  const cachePath = path.join(cacheDir, 'ddragon-items.json');
+  try {
+    const v = version ?? (await fetchJson<string[]>(`${BASE}/api/versions.json`))[0];
+    const data = await fetchJson<{ data: Record<string, DdItem> }>(`${BASE}/cdn/${v}/data/fr_FR/item.json`);
+    const prices: ItemPrices = {};
+    for (const [id, item] of Object.entries(data.data)) {
+      prices[Number(id)] = { name: item.name, total: item.gold.total, final: !item.into || item.into.length === 0 };
+    }
+    await writeFile(cachePath, JSON.stringify(prices)).catch(() => undefined);
+    return prices;
+  } catch (err) {
+    console.warn('[ddragon] items download failed, trying cache:', (err as Error).message);
+  }
+  try {
+    return JSON.parse(await readFile(cachePath, 'utf8')) as ItemPrices;
+  } catch {
+    return {}; // falls back to the prices reported by the game client
+  }
 }

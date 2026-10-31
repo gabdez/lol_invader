@@ -737,3 +737,85 @@ dialog label.check {
   max-height: 320px;
   overflow: auto;
 }
+
+/* live economy */
+.chip.behind {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.small {
+  font-size: 12px;
+}
+.econ-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  text-align: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.big {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.big.pos,
+.verdict.pos {
+  color: var(--good);
+}
+.big.neg,
+.verdict.neg {
+  color: var(--danger);
+}
+.ally-text,
+.enemy-text {
+  color: var(--text-primary);
+}
+.econ-lane {
+  display: grid;
+  grid-template-columns: 90px 1fr 150px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.econ-lane:last-child {
+  border-bottom: none;
+}
+.econ-lane.mine {
+  background: rgba(200, 170, 110, 0.07);
+  border-radius: 8px;
+}
+.econ-role {
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+.econ-player {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border-left: 3px solid var(--ally);
+  padding-left: 8px;
+}
+.econ-player.enemy {
+  border-left-color: var(--enemy);
+}
+.econ-player.dead {
+  opacity: 0.55;
+}
+.econ-player .name {
+  font-weight: 600;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.econ-diff {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.gold-val {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}

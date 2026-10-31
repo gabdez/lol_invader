@@ -3,6 +3,7 @@
 import { analyzeGame } from '../../src/shared/analysis';
 import { ChampionCatalog } from '../../src/shared/catalog';
 import { findCurated } from '../../src/shared/champions';
+import { computeEconomy, newItemAlerts, type ItemPrices } from '../../src/shared/economy';
 import { applyRoleOverrides, countOverrides, emptyOverrides } from '../../src/shared/roles';
 import type { GameContext, PlayerSlot, Role, Settings } from '../../src/shared/types';
 
@@ -62,5 +63,32 @@ let settings: Settings = { anthropicApiKey: '', aiAutoRun: true, focusOnChampSel
   onStatus: on('status'), onAnalysis: on('analysis'), onLive: on('live'), onAi: on('ai'), onCatalog: on('catalog'),
 };
 if (params.has('live')) {
-  setTimeout(() => emit('live', { gameTime: 7 * 60 + 25, objectives: [{ type: 'dragon', time: 330, killerTeam: 'enemy' }] }), 100);
+  // Simulated scoreboard so the live tab can be previewed.
+  const prices: ItemPrices = {
+    1055: { name: 'Lame de Doran', total: 450, final: false },
+    1056: { name: 'Anneau de Doran', total: 400, final: false },
+    3031: { name: "Lame d'infini", total: 3450, final: true },
+    3006: { name: 'Jambières du berzerker', total: 1100, final: true },
+    6672: { name: 'Briseur de Kraken', total: 3100, final: true },
+    3089: { name: 'Coiffe de Rabadon', total: 3600, final: true },
+    3157: { name: 'Sablier de Zhonya', total: 3250, final: true },
+    3068: { name: 'Égide solaire', total: 2700, final: true },
+    1037: { name: 'Pioche', total: 875, final: false },
+  };
+  const st = (level: number, k: number, d: number, a: number, cs: number, items: number[], dead = 0) => ({
+    level, kills: k, deaths: d, assists: a, cs, wardScore: 10, isDead: dead > 0, respawnTimer: dead,
+    items: items.map((id) => ({ id, count: 1 })),
+  });
+  const before = {
+    myGold: 1650,
+    ally: [st(13, 3, 2, 4, 160, [3068, 3006]), st(12, 2, 3, 8, 120, [6672]), st(13, 4, 1, 5, 175, [3089, 1056]), st(11, 2, 2, 3, 150, [3031, 1037]), st(10, 0, 3, 9, 30, [3006])],
+    enemy: [st(12, 1, 3, 2, 140, [1056, 1037]), st(13, 5, 2, 6, 125, [6672, 3006]), st(14, 8, 1, 3, 180, [3157, 3089], 28), st(12, 4, 2, 2, 160, [1037, 1055, 3006]), st(10, 1, 2, 10, 25, [3006])],
+  };
+  const after = { ...before, enemy: [...before.enemy.slice(0, 3), st(12, 4, 2, 2, 165, [6672, 3006]), before.enemy[4]] };
+  const analysis = analyzeGame(catalog, ctx);
+  const objectives = [{ type: 'dragon' as const, time: 330, killerTeam: 'enemy' as const }, { type: 'grubs' as const, time: 500, killerTeam: 'ally' as const }];
+  const e1 = computeEconomy(before, analysis, prices, 19 * 60 + 5, objectives);
+  const e2 = computeEconomy(after, analysis, prices, 19 * 60 + 12, objectives);
+  const alerts = newItemAlerts(e1, e2);
+  setTimeout(() => emit('live', { gameTime: 19 * 60 + 12, objectives, economy: e2, alerts }), 100);
 }

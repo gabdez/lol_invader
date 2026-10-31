@@ -11,7 +11,10 @@ et analyse la partie **dès la sélection des champions** :
   conditions de victoire, profil de dégâts AD/AP, comparaison des forces.
 - **Moments clés** : timeline (invade niveau 1, scuttles, drake, niveau 6, Voidgrubs, plaques, Héraut,
   Baron, pic des hyper carries) adaptée aux deux compos.
-- **En partie** : chrono et prochains objectifs (drake, grubs, Héraut, Baron) depuis l'API live du jeu.
+- **En partie** (onglet « En direct ») : chrono et prochains objectifs (drake, grubs, Héraut, Baron), écart d'or
+  entre les équipes et lane contre lane (valeur des objets comme le Tab, CS, niveaux, KDA), conseils selon la
+  situation (avance/retard, ennemi fed, joueurs morts, or non dépensé) et alertes quand un ennemi termine un objet.
+  Seul ton or exact est visible ; pour les autres, c'est la valeur de leurs objets (prix Data Dragon).
 - **Analyse IA (optionnelle)** : un bouton copie la draft pour la coller dans Claude.ai (sans clé), ou,
   avec une clé API Anthropic, Claude rédige le plan directement dans l'appli quand les 10 champions sont lockés.
 - **Draft manuelle** : saisis n'importe quelle draft pour l'analyser sans lancer de partie.

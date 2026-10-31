@@ -110,6 +110,35 @@ export interface GameContext {
   /** Game time in seconds (in-game only). */
   gameTime?: number;
   objectives?: ObjectiveEvent[];
+  /** In-game scoreboard data (Live Client Data API), same slot order as myTeam / enemyTeam. */
+  liveStats?: LiveStats;
+}
+
+export interface LiveItem {
+  id: number;
+  count: number;
+  /** Price reported by the game client, used only when Data Dragon prices are unavailable. */
+  price?: number;
+  name?: string;
+}
+
+export interface LivePlayerStats {
+  level: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  wardScore: number;
+  isDead: boolean;
+  respawnTimer: number;
+  items: LiveItem[];
+}
+
+export interface LiveStats {
+  /** Current unspent gold of the local player (only the local player's gold is exposed). */
+  myGold: number | null;
+  ally: LivePlayerStats[];
+  enemy: LivePlayerStats[];
 }
 
 export interface ConnectionStatus {

@@ -2,7 +2,7 @@
 // Kept free of Electron/Node APIs so they can be unit tested.
 
 import type { ChampionCatalog } from './catalog';
-import type { GameContext, ObjectiveEvent, PlayerSlot, Role } from './types';
+import type { GameContext, LivePlayerStats, ObjectiveEvent, PlayerSlot, Role } from './types';
 
 const POSITION_MAP: Record<string, Role> = {
   top: 'TOP',
@@ -148,10 +148,15 @@ interface LivePlayer {
     summonerSpellOne?: { rawDisplayName?: string; displayName?: string };
     summonerSpellTwo?: { rawDisplayName?: string; displayName?: string };
   };
+  level?: number;
+  isDead?: boolean;
+  respawnTimer?: number;
+  scores?: { kills?: number; deaths?: number; assists?: number; creepScore?: number; wardScore?: number };
+  items?: { itemID: number; count?: number; price?: number; displayName?: string }[];
 }
 
 export interface LiveGameData {
-  activePlayer?: { riotId?: string; riotIdGameName?: string; summonerName?: string };
+  activePlayer?: { riotId?: string; riotIdGameName?: string; summonerName?: string; currentGold?: number };
   allPlayers?: LivePlayer[];
   events?: { Events?: { EventName: string; EventTime: number; KillerName?: string; DragonType?: string }[] };
   gameData?: { gameTime?: number };
@@ -246,6 +251,25 @@ export function parseLiveGame(data: LiveGameData, catalog: ChampionCatalog): Gam
     enemyTeam: players.filter((p) => p.team !== myTeam).map(toSlot),
     gameTime: data.gameData?.gameTime,
     objectives,
+    liveStats: {
+      myGold: typeof data.activePlayer?.currentGold === 'number' ? data.activePlayer.currentGold : null,
+      ally: players.filter((p) => p.team === myTeam).map(toStats),
+      enemy: players.filter((p) => p.team !== myTeam).map(toStats),
+    },
+  };
+}
+
+function toStats(p: LivePlayer): LivePlayerStats {
+  return {
+    level: p.level ?? 1,
+    kills: p.scores?.kills ?? 0,
+    deaths: p.scores?.deaths ?? 0,
+    assists: p.scores?.assists ?? 0,
+    cs: p.scores?.creepScore ?? 0,
+    wardScore: p.scores?.wardScore ?? 0,
+    isDead: !!p.isDead,
+    respawnTimer: p.respawnTimer ?? 0,
+    items: (p.items ?? []).map((i) => ({ id: i.itemID, count: i.count ?? 1, price: i.price, name: i.displayName })),
   };
 }
 

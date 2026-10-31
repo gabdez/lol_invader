@@ -2,11 +2,12 @@ import { app, BrowserWindow, clipboard, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import { analyzeGame } from '../shared/analysis';
 import { ChampionCatalog } from '../shared/catalog';
+import { computeEconomy, newItemAlerts, type EconAlert, type EconomySnapshot, type ItemPrices } from '../shared/economy';
 import { compositionSignature } from '../shared/parsers';
 import { applyRoleOverrides, countOverrides, emptyOverrides, type RoleOverrides } from '../shared/roles';
 import type { AiStreamEvent, GameAnalysis, GameContext, Role, Settings } from '../shared/types';
 import { runAiAnalysis } from './ai';
-import { loadCatalog } from './ddragon';
+import { loadCatalog, loadItemPrices } from './ddragon';
 import { loadSettings, saveSettings } from './settings';
 import { GameWatcher } from './watcher';
 
@@ -17,6 +18,9 @@ let lastAuto: { context: GameContext; analysis: GameAnalysis; overrideCount: num
 /** Last context as reported by the client/game, before user role corrections. */
 let lastRaw: GameContext | null = null;
 let roleOverrides: RoleOverrides = emptyOverrides();
+let itemPrices: ItemPrices = {};
+let lastEconomy: EconomySnapshot | null = null;
+let econAlerts: EconAlert[] = [];
 let lastSignature = '';
 let lastAiSignature = '';
 let aiRequestId = 0;
@@ -71,11 +75,25 @@ function startAi(context: GameContext, analysis: GameAnalysis): number {
   return requestId;
 }
 
+function sendLive(raw: GameContext): void {
+  if (raw.gameTime === undefined) return;
+  const objectives = raw.objectives ?? [];
+  let economy: EconomySnapshot | null = null;
+  if (raw.liveStats && lastAuto) {
+    economy = computeEconomy(raw.liveStats, lastAuto.analysis, itemPrices, raw.gameTime, objectives);
+    econAlerts = [...newItemAlerts(lastEconomy, economy).reverse(), ...econAlerts].slice(0, 8);
+    lastEconomy = economy;
+  }
+  send('live', { gameTime: raw.gameTime, objectives, economy, alerts: econAlerts });
+}
+
 function onContext(raw: GameContext): void {
   lastRaw = raw;
-  if (raw.gameTime !== undefined) {
-    send('live', { gameTime: raw.gameTime, objectives: raw.objectives ?? [] });
-  }
+  updateAnalysis(raw);
+  sendLive(raw);
+}
+
+function updateAnalysis(raw: GameContext): void {
   const context = applyRoleOverrides(raw, roleOverrides);
   const signature = compositionSignature(context);
   if (signature === lastSignature) return;
@@ -140,6 +158,8 @@ app.whenReady().then(async () => {
   watcher.on('champSelectStart', () => {
     lastSignature = '';
     roleOverrides = emptyOverrides(); // new game: forget previous corrections
+    lastEconomy = null;
+    econAlerts = [];
     if (settings.focusOnChampSelect && win) {
       if (win.isMinimized()) win.restore();
       win.show();
@@ -149,6 +169,7 @@ app.whenReady().then(async () => {
   registerIpc(watcher);
 
   catalog = await loadCatalog(app.getPath('userData'));
+  itemPrices = await loadItemPrices(app.getPath('userData'), catalog.version);
   send('catalog', catalogPayload());
   watcher.start();
 
